@@ -34,7 +34,8 @@ jobs:
           extensions: mbstring, bcmath, xml, mysql
           ini-values: post_max_size=256M, max_execution_time=180
           coverage: none
-
+      - name: Install Composer
+        run: composer update -W
       - name: Install Composer dependencies
         run: composer install --prefer-dist --no-progress --no-suggest
 
