@@ -1,19 +1,19 @@
-# Script-Kiddie Laravel Project - Test Plan & Evaluation
+# Script-Kiddie Laravel Project – Test Plan & Evaluation
 
 ## Contents
 - [Test Plan](#test-plan)  
-  - User Stories  
-  - Link to the V-Model  
-  - System Tests  
-  - Unit Tests  
-  - Why Certain Parts Are or Aren't Tested  
+  - [User Stories](#user-stories)  
+  - [V-Model Mapping](#v-model-mapping)  
+  - [System Tests](#system-tests)  
+  - [Unit Tests](#unit-tests)  
+  - [Test Scope and Omissions](#test-scope-and-omissions)  
 - [Test Results Screenshot](#test-results-screenshot)  
 - [Evaluation](#evaluation)  
-  - Detectable Errors  
-  - Undetectable Errors  
-  - Test Coverage Conclusion  
-  - Test Automation and Effectiveness  
-  - Critical Reflection and Improvement Proposal  
+  - [Detectable Errors](#detectable-errors)  
+  - [Undetectable Errors](#undetectable-errors)  
+  - [Test Coverage Conclusion](#test-coverage-conclusion)  
+  - [Test Automation and Effectiveness](#test-automation-and-effectiveness)  
+  - [Critical Reflection and Improvement Proposal](#critical-reflection-and-improvement-proposal)  
 
 ---
 
@@ -22,100 +22,136 @@
 ### User Stories
 
 1. **Contact Form Submission**  
-   - Happy path: User fills in valid name, email, and message, and submits successfully.  
-   - Unhappy path: User submits with invalid or missing fields, validation errors are shown.
+   - **Happy path**: A user submits valid data (`name: "John Doe"`, `email: "visitor@example.com"`, `message: "Hello"`).  
+     - **Expected**: Redirect (HTTP 302), success flash message, and DB persistence.  
+   - **Unhappy paths**:  
+     - Missing fields → shows validation errors.  
+     - Invalid email format → triggers error message.
 
 2. **User Registration**  
-   - Happy path: User provides valid registration data and is registered successfully.  
-   - Unhappy path: User submits incomplete or invalid registration data, errors are displayed.
+   - **Happy path**: A user registers with valid data (`name: "Jane Doe"`, `email: "jane@example.com"`, `password: "Secure123!"`).  
+     - **Expected**: Redirect to dashboard, user saved with hashed password.  
+   - **Unhappy paths**:  
+     - Weak password (`password: "123"`) → validation error.  
+     - Duplicate email → error: "The email has already been taken."  
 
 ---
 
-### Link to the V-Model
+### V-Model Mapping
 
-| User Story                | V-Model Phase            | Description                                                        |
-|---------------------------|--------------------------|--------------------------------------------------------------------|
-| Contact Form Submission   | System Testing           | Tests entire contact form submission including validation & UI.   |
-|                           | Unit Testing             | Tests validation logic and controller methods individually.       |
-| User Registration         | System Testing           | Tests full registration process through the web interface.        |
-|                           | Unit Testing             | Tests user model validation rules and registration service logic. |
-
-Each user story includes system tests for both happy and unhappy paths, as well as unit tests verifying underlying logic.
+| V-Model Phase          | Test Level    | User Story                | Test Focus                                                                 |
+|------------------------|---------------|---------------------------|----------------------------------------------------------------------------|
+| Requirements Definition | System Test   | Contact Form Submission   | End-to-end form flow, CSRF handling, DB save, flash messaging.            |
+| System Design           | Unit Test     | Contact Form Submission   | Validation logic for required fields and email format.                    |
+| Requirements Definition | System Test   | User Registration         | Registration process: UI submission, DB persistence, redirection.         |
+| System Design           | Unit Test     | User Registration         | Enforcing strong passwords, unique emails, and data validation.           |
 
 ---
 
-### System Tests per User Story
+### System Tests
 
-- **Contact Form**  
-  - Successful form submission with valid input.  
-  - Form submission with missing or invalid data resulting in validation errors.
+These simulate full browser-like behavior and validate user experience workflows:
 
-- **User Registration**  
-  - Successful registration flow with valid input.  
-  - Registration attempt with missing or invalid data showing appropriate errors.
+- **Contact Form**
+  - `test_contact_form_submits_successfully`:  
+    - Posts valid input → expects 302 redirect and session success message.
+  - `test_contact_form_shows_errors_on_invalid_input`:  
+    - Posts missing or malformed data → expects session validation errors.
 
----
+- **User Registration**
+  - `test_user_can_register_with_valid_data`:  
+    - Valid data → expects redirect to dashboard and `users` table entry.
+  - `test_user_registration_fails_with_missing_data`:  
+    - Empty fields → expects error bag and no user creation.
 
-### Unit Tests per User Story
-
-- **Contact Form**  
-  - Validation rules for `name`, `email`, and `message`.  
-  - Controller method behavior on valid and invalid input.
-
-- **User Registration**  
-  - Validation rules on registration data.  
-  - User creation logic and database persistence.
+*All system tests use `WithoutMiddleware` to bypass CSRF protection for testing.*
 
 ---
 
-### Why Certain Parts Are or Aren't Tested
+### Unit Tests
 
-The tests focus on core functionalities critical to user interaction and data integrity, such as input validation and successful data submission. External integrations (like email sending), UI/UX design, and performance under heavy load are not tested here due to their specialized nature, requiring dedicated integration, manual, or performance testing. This choice ensures the scope remains manageable and focused on validating business-critical logic.
+These focus on isolated business logic components:
+
+- **Contact Form**
+  - `test_contact_validation_rules`: Validates field-level requirements (email format, required message).
+  - `test_contact_controller_rejects_invalid_data`: Directly calls controller logic with mocks.
+
+- **User Registration**
+  - `test_user_model_requires_valid_email_and_password`: Ensures model validation constraints are correct.
+  - `test_user_password_is_hashed`: Asserts passwords are encrypted when stored.
+
+---
+
+### Test Scope and Omissions
+
+**Included:**
+- Form submissions (valid/invalid)
+- Validation logic
+- DB write verification
+- Redirect and session state assertions
+
+**Omitted (with rationale):**
+- **Email delivery**: Requires mail mocking (`Mail::fake()`); out of current scope.
+- **Frontend/UI**: CSS/JS testing requires browser automation tools (e.g., Dusk).
+- **Performance/load testing**: Needs tools like Apache Bench or JMeter.
+- **Authorization logic**: Not in current user stories.
 
 ---
 
 ## Test Results Screenshot
 
-*Include a screenshot named `testscreenshot.png` showing all tests passing.*
+> ✅ All tests passing locally and in CI after fixing CSRF and session issues.
 
-![Test Results Screenshot](./testscreenshot.png)
+![Test Result Local Screenshot](img.png)  
+![Test Results in GitHub Screenshot](image.png)
 
 ---
 
 ## Evaluation
 
-### Detectable Errors by Tests
+### Detectable Errors
 
-- Invalid or missing input data triggering validation errors.  
-- Successful handling and persistence of valid data submissions.  
-- Proper response handling for both success and error scenarios.
+- Invalid inputs trigger validation.
+- Missing required fields return appropriate error messages.
+- Valid submissions result in correct redirections and DB persistence.
+- Duplicate entries (email) are blocked.
 
-### Undetectable Errors by Tests
+### Undetectable Errors
 
-- Frontend UI/UX issues unrelated to form validation or submission.  
-- Performance bottlenecks or server/database failures under stress.  
-- Failures in external systems such as email servers or third-party APIs.  
-- Security vulnerabilities beyond input validation scope.
+- Visual bugs (e.g., misaligned buttons, hidden errors).
+- Real-world integration failures (e.g., mail server down).
+- Security issues like SQL injection not explicitly tested.
+- Broken frontend JavaScript behavior (no browser simulation).
 
-### To What Extent Can We Conclude “Everything Works Correctly”?
+### Test Coverage Conclusion
 
-The current tests cover core functional and validation scenarios, providing confidence that key features behave correctly under both valid and invalid inputs. However, they do not guarantee flawless operation in all scenarios. For a more comprehensive assurance, additional layers of testing—such as integration tests, UI automation, security assessments, and load testing—are recommended.
+- **Strong coverage** for backend logic, form validation, and DB writes.
+- **Gaps remain** in UI interaction and third-party service integration.
+- Covers all user stories with both happy and unhappy paths.
 
 ### Test Automation and Effectiveness
 
-All tests are automated and can be executed using the `php artisan test` command. In a full development pipeline, these tests should be integrated with a Continuous Integration (CI) system to run automatically on every code push, ensuring immediate feedback on code quality and preventing regressions.
+- Tests run via `php artisan test`.
+- CI integrated via GitHub Actions.
+- CSRF bypassed in test environment with `WithoutMiddleware` trait.
+- Tests run in under 2 seconds, providing rapid feedback.
 
 ### Critical Reflection and Improvement Proposal
 
-While the test suite effectively validates main functionalities, its current limitation is the absence of integration and UI automation tests. Introducing integration tests would verify end-to-end workflows including database and external service interactions. Automated UI tests (e.g., Laravel Dusk) could catch frontend issues missed by backend tests. Adding these would enhance robustness and reduce manual testing effort.
+**Current Gaps**
+1. No integration test for outgoing emails.
+2. No browser tests to verify JavaScript or client-side validation.
+3. No load or concurrency testing.
 
----
+**Improvement Proposals**
+1. **Mail Integration Test** (Laravel):
+   ```php
+   Mail::fake();
+   $this->post('/contact', [...]);
+   Mail::assertSent(ContactMail::class);
 
-# Notes
+2. **Browser Testing**:
+- Use Laravel Dusk for end-to-end UI testing (dynamic errors, field highlighting).
 
-- Tests follow the Arrange-Act-Assert (AAA) pattern consistently.  
-- Both happy and unhappy paths are covered at unit and system levels.  
-- Factories are used for setting up test data where applicable.  
-- Tests are ready to be integrated into CI pipelines for automatic execution.
-
----
+3. **CI Optimization**:
+- Parallelize tests using --parallel for faster pipeline execution.
