@@ -1,66 +1,121 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Script-Kiddie Laravel Project - Test Plan & Evaluation
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## Contents
+- [Test Plan](#test-plan)  
+  - User Stories  
+  - Link to the V-Model  
+  - System Tests  
+  - Unit Tests  
+  - Why Certain Parts Are or Aren't Tested  
+- [Test Results Screenshot](#test-results-screenshot)  
+- [Evaluation](#evaluation)  
+  - Detectable Errors  
+  - Undetectable Errors  
+  - Test Coverage Conclusion  
+  - Test Automation and Effectiveness  
+  - Critical Reflection and Improvement Proposal  
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Test Plan
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### User Stories
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+1. **Contact Form Submission**  
+   - Happy path: User fills in valid name, email, and message, and submits successfully.  
+   - Unhappy path: User submits with invalid or missing fields, validation errors are shown.
 
-## Learning Laravel
+2. **User Registration**  
+   - Happy path: User provides valid registration data and is registered successfully.  
+   - Unhappy path: User submits incomplete or invalid registration data, errors are displayed.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+---
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+### Link to the V-Model
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+| User Story                | V-Model Phase            | Description                                                        |
+|---------------------------|--------------------------|--------------------------------------------------------------------|
+| Contact Form Submission   | System Testing           | Tests entire contact form submission including validation & UI.   |
+|                           | Unit Testing             | Tests validation logic and controller methods individually.       |
+| User Registration         | System Testing           | Tests full registration process through the web interface.        |
+|                           | Unit Testing             | Tests user model validation rules and registration service logic. |
 
-## Laravel Sponsors
+Each user story includes system tests for both happy and unhappy paths, as well as unit tests verifying underlying logic.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+---
 
-### Premium Partners
+### System Tests per User Story
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+- **Contact Form**  
+  - Successful form submission with valid input.  
+  - Form submission with missing or invalid data resulting in validation errors.
 
-## Contributing
+- **User Registration**  
+  - Successful registration flow with valid input.  
+  - Registration attempt with missing or invalid data showing appropriate errors.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+---
 
-## Code of Conduct
+### Unit Tests per User Story
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+- **Contact Form**  
+  - Validation rules for `name`, `email`, and `message`.  
+  - Controller method behavior on valid and invalid input.
 
-## Security Vulnerabilities
+- **User Registration**  
+  - Validation rules on registration data.  
+  - User creation logic and database persistence.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+---
 
-## License
+### Why Certain Parts Are or Aren't Tested
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+The tests focus on core functionalities critical to user interaction and data integrity, such as input validation and successful data submission. External integrations (like email sending), UI/UX design, and performance under heavy load are not tested here due to their specialized nature, requiring dedicated integration, manual, or performance testing. This choice ensures the scope remains manageable and focused on validating business-critical logic.
+
+---
+
+## Test Results Screenshot
+
+*Include a screenshot named `testscreenshot.png` showing all tests passing.*
+
+![Test Results Screenshot](./testscreenshot.png)
+
+---
+
+## Evaluation
+
+### Detectable Errors by Tests
+
+- Invalid or missing input data triggering validation errors.  
+- Successful handling and persistence of valid data submissions.  
+- Proper response handling for both success and error scenarios.
+
+### Undetectable Errors by Tests
+
+- Frontend UI/UX issues unrelated to form validation or submission.  
+- Performance bottlenecks or server/database failures under stress.  
+- Failures in external systems such as email servers or third-party APIs.  
+- Security vulnerabilities beyond input validation scope.
+
+### To What Extent Can We Conclude “Everything Works Correctly”?
+
+The current tests cover core functional and validation scenarios, providing confidence that key features behave correctly under both valid and invalid inputs. However, they do not guarantee flawless operation in all scenarios. For a more comprehensive assurance, additional layers of testing—such as integration tests, UI automation, security assessments, and load testing—are recommended.
+
+### Test Automation and Effectiveness
+
+All tests are automated and can be executed using the `php artisan test` command. In a full development pipeline, these tests should be integrated with a Continuous Integration (CI) system to run automatically on every code push, ensuring immediate feedback on code quality and preventing regressions.
+
+### Critical Reflection and Improvement Proposal
+
+While the test suite effectively validates main functionalities, its current limitation is the absence of integration and UI automation tests. Introducing integration tests would verify end-to-end workflows including database and external service interactions. Automated UI tests (e.g., Laravel Dusk) could catch frontend issues missed by backend tests. Adding these would enhance robustness and reduce manual testing effort.
+
+---
+
+# Notes
+
+- Tests follow the Arrange-Act-Assert (AAA) pattern consistently.  
+- Both happy and unhappy paths are covered at unit and system levels.  
+- Factories are used for setting up test data where applicable.  
+- Tests are ready to be integrated into CI pipelines for automatic execution.
+
+---
