@@ -4,11 +4,13 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\WithoutMiddleware;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class UserRegistrationTest extends TestCase
 {
+    use WithoutMiddleware;
     use RefreshDatabase;
     #[Test]
     public function user_can_register_with_valid_data()

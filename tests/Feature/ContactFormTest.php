@@ -3,12 +3,14 @@
 namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\WithoutMiddleware;
 use Illuminate\Support\Facades\Mail;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ContactFormTest extends TestCase
 {
+    use WithoutMiddleware;
     use RefreshDatabase;
     #[Test]
     public function contact_form_submits_successfully()
