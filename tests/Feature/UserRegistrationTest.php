@@ -13,18 +13,24 @@ class UserRegistrationTest extends TestCase
     use WithoutMiddleware;
     use RefreshDatabase;
     #[Test]
-    public function user_can_register_with_valid_data()
+    public function test_user_can_register_with_valid_data()
     {
-        $response = $this->post('/register', [
+        // Arrange
+        $userData = [
             'name' => 'Test User',
             'email' => 'test@example.com',
             'password' => 'password',
             'password_confirmation' => 'password',
-        ]);
+        ];
 
+        // Act
+        $response = $this->post('/register', $userData);
+
+        // Assert
         $response->assertRedirect('/dashboard');
         $this->assertDatabaseHas('users', ['email' => 'test@example.com']);
     }
+
     #[Test]
     public function user_registration_fails_with_missing_data()
     {

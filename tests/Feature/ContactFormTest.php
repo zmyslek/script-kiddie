@@ -15,17 +15,21 @@ class ContactFormTest extends TestCase
     #[Test]
     public function contact_form_submits_successfully()
     {
-        Mail::fake();
+        // Arrange
+        $formData = [
+            'name' => 'John Doe',
+            'email' => 'john@example.com',
+            'message' => 'Hello world',
+        ];
 
-        $response = $this->post('/contact', [
-            'name' => 'Visitor',
-            'email' => 'visitor@example.com',
-            'message' => 'Hello!',
-        ]);
+        // Act
+        $response = $this->post('/contact', $formData);
 
+        // Assert
         $response->assertStatus(302);
         $response->assertSessionHas('success');
     }
+
     #[Test]
     public function contact_form_shows_errors_on_invalid_input()
     {
