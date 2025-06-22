@@ -9,16 +9,29 @@ use Tests\TestCase;
 class UserTest extends TestCase
 {
     /** @test */
-    public function user_password_is_hashed_upon_creation()
+    public function password_is_hashed_correctly_upon_user_creation()
     {
-        $plainPassword = 'MySecurePassword123!';
-        $user = User::create([
-            'name' => 'Unit Tester',
-            'email' => 'unittest@example.com',
-            'password' => $plainPassword,
+        // Arrange
+        $password = 'SecurePassword123!';
+        $user = User::factory()->create([
+            'password' => $password,
         ]);
 
-        $this->assertNotEquals($plainPassword, $user->password);
-        $this->assertTrue(Hash::check($plainPassword, $user->password));
+        // Act & Assert
+        $this->assertNotEquals($password, $user->password);
+        $this->assertTrue(Hash::check($password, $user->password));
+    }
+
+    /** @test */
+    public function email_with_invalid_format_fails_validation()
+    {
+        // Arrange
+        $invalidEmail = 'example..@email';
+
+        // Act
+        $isValid = filter_var($invalidEmail, FILTER_VALIDATE_EMAIL);
+
+        // Assert
+        $this->assertFalse($isValid);
     }
 }
