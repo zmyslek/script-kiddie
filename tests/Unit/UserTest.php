@@ -4,7 +4,7 @@ namespace Tests\Unit;
 
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 
 class UserTest extends TestCase
