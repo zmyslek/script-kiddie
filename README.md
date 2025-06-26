@@ -186,8 +186,8 @@ public function email_with_invalid_format_is_rejected()
 
 ## Test Results Screenshot
 
-![Test Result Local Screenshot](image.png)
-![Test Results in GitHub Screenshot](image-1.png)
+![Test Result Local Screenshot](image-1.png)
+![Test Results in GitHub Screenshot](image-2.png)
 
 ---
 
