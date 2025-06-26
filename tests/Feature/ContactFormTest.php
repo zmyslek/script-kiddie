@@ -17,9 +17,9 @@ class ContactFormTest extends TestCase
     {
         // Arrange
         $formData = [
-            'name' => 'John Doe',
+            'name' => 'John',
             'email' => 'john@example.com',
-            'message' => 'Hello world',
+            'message' => 'Hi, this is a test.',
         ];
 
         // Act

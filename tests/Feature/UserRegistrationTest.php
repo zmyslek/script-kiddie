@@ -13,22 +13,19 @@ class UserRegistrationTest extends TestCase
     use WithoutMiddleware;
     use RefreshDatabase;
     #[Test]
-    public function test_user_can_register_with_valid_data()
+    public function user_can_register_with_valid_data()
     {
         // Arrange
-        $userData = [
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-            'password' => 'password',
-            'password_confirmation' => 'password',
-        ];
+        $newUserData = User::factory()->make()->toArray();
+        $newUserData['password'] = 'password123';
+        $newUserData['password_confirmation'] = 'password123';
 
         // Act
-        $response = $this->post('/register', $userData);
+        $response = $this->post('/register', $newUserData);
 
         // Assert
         $response->assertRedirect('/dashboard');
-        $this->assertDatabaseHas('users', ['email' => 'test@example.com']);
+        $this->assertDatabaseHas('users', ['email' => $newUserData['email']]);
     }
 
     #[Test]
@@ -42,4 +39,60 @@ class UserRegistrationTest extends TestCase
 
         $response->assertSessionHasErrors(['name', 'email', 'password']);
     }
+
+    #[Test]
+    public function registration_fails_with_duplicate_email()
+    {
+        // Arrange
+        User::factory()->create(['email' => 'dupe@example.com']);
+        $userData = [
+            'name' => 'Another User',
+            'email' => 'dupe@example.com',
+            'password' => 'anotherpassword',
+            'password_confirmation' => 'anotherpassword',
+        ];
+
+        // Act
+        $response = $this->post('/register', $userData);
+
+        // Assert
+        $response->assertSessionHasErrors('email');
+    }
+
+    #[Test]
+    public function registration_with_invalid_email_fails()
+    {
+        // Arrange
+        $userData = [
+            'name' => 'Test User',
+            'email' => 'invalid..email@',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ];
+
+        // Act
+        $response = $this->post('/register', $userData);
+
+        // Assert
+        $response->assertSessionHasErrors(['email']);
+    }
+
+    #[Test]
+    public function registration_fails_with_double_dot_email()
+    {
+        // Arrange
+        $userData = [
+            'name' => 'Edge Case User',
+            'email' => 'user..name@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ];
+
+        // Act
+        $response = $this->post('/register', $userData);
+
+        // Assert
+        $response->assertSessionHasErrors(['email']);
+    }
+
 }

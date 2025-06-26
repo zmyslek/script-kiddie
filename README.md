@@ -1,7 +1,3 @@
-Great! Here is your updated and complete `README.md`, reflecting all corrections, improvements, and your current test code:
-
----
-
 # Script-Kiddie Laravel Project – Test Plan & Evaluation
 
 ## Contents
@@ -75,19 +71,16 @@ Great! Here is your updated and complete `README.md`, reflecting all corrections
 public function user_can_register_with_valid_data()
 {
     // Arrange
-    $userData = [
-        'name' => 'Test User',
-        'email' => 'test@example.com',
-        'password' => 'password',
-        'password_confirmation' => 'password',
-    ];
+    $userData = User::factory()->make()->toArray();
+    $userData['password'] = 'password123';
+    $userData['password_confirmation'] = 'password123';
 
     // Act
     $response = $this->post('/register', $userData);
 
     // Assert
     $response->assertRedirect('/dashboard');
-    $this->assertDatabaseHas('users', ['email' => 'test@example.com']);
+    $this->assertDatabaseHas('users', ['email' => $userData['email']]);
 }
 ```
 
@@ -98,9 +91,9 @@ public function contact_form_submits_successfully()
 {
     // Arrange
     $formData = [
-        'name' => 'John Doe',
-        'email' => 'john@example.com',
-        'message' => 'Hello world',
+        'name' => 'Jane Doe',
+        'email' => 'jane@example.com',
+        'message' => 'This is a test message.',
     ];
 
     // Act
@@ -110,34 +103,75 @@ public function contact_form_submits_successfully()
     $response->assertStatus(302);
     $response->assertSessionHas('success');
 }
+
+```
+
+#### `registration_fails_with_invalid_email_format`
+
+```php
+public function registration_fails_with_invalid_email_format()
+{
+    // Arrange
+    $userData = [
+        'name' => 'Invalid Email User',
+        'email' => 'invalid..email@',
+        'password' => 'password123',
+        'password_confirmation' => 'password123',
+    ];
+
+    // Act
+    $response = $this->post('/register', $userData);
+
+    // Assert
+    $response->assertSessionHasErrors(['email']);
+}
+
+
 ```
 
 ---
 
 ### Unit Tests (using AAA)
 
-#### `password_is_hashed_correctly_upon_user_creation`
+#### `multiple_users_are_created_with_unique_emails`
 
 ```php
-public function password_is_hashed_correctly_upon_user_creation()
+public function multiple_users_are_created_with_unique_emails()
 {
     // Arrange
-    $password = 'SecurePassword123!';
+    $users = User::factory()->count(3)->make();
+
+    // Act
+    $emails = $users->pluck('email')->toArray();
+
+    // Assert
+    $this->assertCount(3, array_unique($emails));
+}
+
+```
+
+#### `password_is_hashed_correctly`
+
+```php
+public function password_is_hashed_correctly()
+{
+    // Arrange
+    $password = 'SuperSecure123!';
     $user = User::factory()->make(['password' => bcrypt($password)]);
 
     // Assert
     $this->assertNotEquals($password, $user->password);
     $this->assertTrue(Hash::check($password, $user->password));
 }
-```
 
-#### `email_with_invalid_format_fails_validation`
+```
+#### `email_with_invalid_format_is_rejected`
 
 ```php
-public function email_with_invalid_format_fails_validation()
+public function email_with_invalid_format_is_rejected()
 {
     // Arrange
-    $invalidEmail = 'invalid..@email';
+    $invalidEmail = 'wrong..email@';
 
     // Act
     $isValid = filter_var($invalidEmail, FILTER_VALIDATE_EMAIL);
@@ -145,8 +179,9 @@ public function email_with_invalid_format_fails_validation()
     // Assert
     $this->assertFalse($isValid);
 }
-```
 
+
+```
 ---
 
 ## Test Results Screenshot
@@ -157,43 +192,48 @@ public function email_with_invalid_format_fails_validation()
 ---
 
 ## Evaluation
+Writing and running tests went according to plan, and all major user stories are covered by tests. Tests cover a range of inputs, including valid and invalid cases. Unit tests focus on low-level logic, while system tests simulate real user flows.
 
 ### Detectable Errors
 
-* Validation errors like empty message, short passwords, malformed email addresses.
-* Ensures only valid users are created and bad inputs are rejected.
+* Validation errors like:
+    * Email format issues
+    * Empty fields
+    * Password mismatch
+* Registration success and DB creation
+* Contact form success and session feedback
 
 ### Undetectable Errors
 
-* Frontend: Clicking disabled buttons or rendering bugs.
-* Integration: Mail server unavailable, not caught without mocking.
-* Security: SQL injection or XSS unless explicitly tested (out of scope here).
-
----
+* UI issues (e.g., elements not visible or clickable)
+* Network/mail integration (mail sending was not mocked)
+* Security issues (XSS, CSRF) not tested explicitly
 
 ### Test Coverage Conclusion
 
-Tests cover all defined **user stories**, including both happy and unhappy paths.
-Edge cases (e.g. invalid email with `..`, or missing fields) were tested successfully.
-However, UI-specific behavior and 3rd-party services are not covered in automated tests.
+* Tests **cover all user stories** defined in the planning stage.
+* Edge cases such as `invalid..email@` and empty message fields are tested.
+* Unit tests are isolated and don't rely on database or HTTP context.
+* However, some parts like UI rendering and real mail delivery require further tools (Laravel Dusk, Mail fake).
 
 ---
 
 ### Test Automation and Effectiveness
 
-* All tests are automated using `php artisan test`.
-* CI pipeline in GitHub runs tests on push automatically.
-* Tests complete in under 1s, making them ideal for quick feedback.
-* Factories and Laravel helpers ensure clean, consistent test setup.
+* All tests run via `php artisan test`
+* GitHub Actions CI is configured to run tests on push — **but hasn’t been verified on actual push yet**
+* Tests run fast (under 1s) and reliably
+* Laravel Factory is used to ensure realistic and clean data in both system and unit tests
 
 ---
 
 ### Critical Reflection and Improvement Proposal
 
-Writing and running tests went according to plan, and the tests reflect the intended user stories well.
+The testing process was smooth, and all intended test cases were implemented successfully. The combination of unit and system tests provides solid backend confidence.
 
-**Improvements**:
+**Improvements:**
 
-1. Add integration tests using `Mail::fake()` to verify mail is sent.
-2. Add UI automation (e.g., Laravel Dusk) to test JavaScript, client validation.
-3. Expand CI to run tests in parallel for performance.
+1. Add integration tests using `Mail::fake()` to test mail-sending without requiring a real SMTP server.
+2. Integrate UI testing with Laravel Dusk for full end-to-end testing of frontend behavior.
+3. Verify CI by performing a real GitHub push with failing and passing tests.
+4. Consider adding performance/stress testing tools if scaling becomes a concern.
