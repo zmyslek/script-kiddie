@@ -319,7 +319,7 @@
 ## Test Results Screenshot
 
 ![Test Result Local Screenshot](image.png)
-![Test Results in GitHub Screenshot](image-2.png)
+![Test Results in GitHub Screenshot](image-1.png)
 
 ---
 
