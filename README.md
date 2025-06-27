@@ -8,6 +8,7 @@
   * [Acceptance Criteria](#acceptance-criteria)
   * [Why Some Parts Are or Aren't Tested](#why-some-parts-are-or-arent-tested)
   * [Link to the V-Model](#link-to-the-v-model)
+* [Test Plan Implementation](#test-plan-implementation)
   * [System Tests](#system-tests)
   * [Unit Tests](#unit-tests)
 * [Test Results Screenshot](#test-results-screenshot)
@@ -26,7 +27,22 @@
 ### User Stories
 
 1. **As a visitor**, I want to send a message using the contact form so that I can ask questions or provide feedback.
+
+   - **Happy Path**: Visitor submits form with valid name, email, and message.
+   - **Unhappy Path**: Visitor submits form with missing fields or invalid email.
+   - **Scenario**: Contact form submission.
+
 2. **As a new user**, I want to register securely so I can log in and access the application.
+
+   - **Happy Path**: User submits valid name, unique email, and strong password.
+   - **Unhappy Path**: User submits empty name, invalid email format, double-dot email, duplicate email, or password mismatch.
+   - **Scenario**: Registration and validation.
+
+3. **As a developer**, I want to ensure that validation and hashing logic works correctly, so user data remains secure and formatted.
+
+   - **Happy Path**: Password is hashed, email passes validation.
+   - **Unhappy Path**: Email fails due to invalid format (double dots, ending with `@`, etc.).
+   - **Scenario**: Unit tests for validation logic.
 
 ### Acceptance Criteria
 
@@ -40,6 +56,10 @@
   * A user must provide a unique email, a name, and a password with at least 8 characters.
   * Repeated emails or weak passwords must be rejected.
 
+* Validation Logic:
+
+  * Email must be RFC-compliant.
+  * Passwords must be hashed before storing.
 ---
 
 ### Why Some Parts Are or Aren’t Tested
@@ -54,139 +74,251 @@
 
 ### Link to the V-Model
 
-| V-Model Phase       | Test Level  | User Story        | Test Focus                                    |
-| ------------------- | ----------- | ----------------- | --------------------------------------------- |
-| **Requirements**    | System Test | Contact Form      | End-to-end flow, validation + DB persistence. |
-| **Requirements**    | System Test | User Registration | Full registration path, happy + edge cases.   |
-| **Detailed Design** | Unit Test   | User Registration | User object creation, password hashing.       |
-| **Detailed Design** | Unit Test   | Email Validation  | Email format rejection at low level.          |
+| V-Model Phase       | Test Level  | User Story              | Scenario Description              | Test Description                                   |
+| ------------------- | ----------- | ----------------------- | --------------------------------- | -------------------------------------------------- |
+| **Specification**   | System Test | Visitor submits contact | Valid/invalid name/email/message  | Form submission, error handling, session feedback  |
+| **Specification**   | System Test | New user registers      | Valid/invalid email/name/password | User creation, DB persistence, redirection         |
+| **Detailed Design** | Unit Test   | User creation factory   | Multiple users with unique emails | Tests email uniqueness, password hashing           |
+| **Detailed Design** | Unit Test   | Validation logic        | Invalid email, empty fields       | Tests Laravel validator logic for input edge cases |
+| **Detailed Design** | Unit Test   |Password hashing         | Password security                 | Ensure plain-text password is not stored           |
 
 ---
+## Implementation
 
 ### System Tests (using AAA)
 
-#### `user_can_register_with_valid_data`
+#### `ContactFormTest.php`
+
+##### `contact_form_submits_successfully`
 
 ```php
-public function user_can_register_with_valid_data()
-{
-    // Arrange
-    $userData = User::factory()->make()->toArray();
-    $userData['password'] = 'password123';
-    $userData['password_confirmation'] = 'password123';
+    #[Test]
+    public function contact_form_submits_successfully()
+    {
+        // Arrange
+        $formData = [
+            'name' => 'John',
+            'email' => 'john@example.com',
+            'message' => 'Hi, this is a test.',
+        ];
 
-    // Act
-    $response = $this->post('/register', $userData);
+        // Act
+        $response = $this->post('/contact', $formData);
 
-    // Assert
-    $response->assertRedirect('/dashboard');
-    $this->assertDatabaseHas('users', ['email' => $userData['email']]);
+        // Assert
+        $response->assertStatus(302);
+        $response->assertSessionHas('success');
 }
 ```
 
-#### `contact_form_submits_successfully`
+##### `contact_form_shows_errors_on_invalid_input`
 
 ```php
-public function contact_form_submits_successfully()
-{
-    // Arrange
-    $formData = [
-        'name' => 'Jane Doe',
-        'email' => 'jane@example.com',
-        'message' => 'This is a test message.',
-    ];
+    #[Test]
+    public function contact_form_shows_errors_on_invalid_input()
+    {
+        $response = $this->post('/contact', [
+            'name' => '',
+            'email' => 'not-an-email',
+            'message' => '',
+        ]);
 
-    // Act
-    $response = $this->post('/contact', $formData);
-
-    // Assert
-    $response->assertStatus(302);
-    $response->assertSessionHas('success');
-}
-
+        $response->assertSessionHasErrors(['name', 'email', 'message']);
+    }
 ```
 
-#### `registration_fails_with_invalid_email_format`
+#### `UserRegistrationTest.php`
+
+##### `user_can_register_with_valid_data`
 
 ```php
-public function registration_fails_with_invalid_email_format()
-{
-    // Arrange
-    $userData = [
-        'name' => 'Invalid Email User',
-        'email' => 'invalid..email@',
-        'password' => 'password123',
-        'password_confirmation' => 'password123',
-    ];
+    #[Test]
+    public function user_can_register_with_valid_data()
+    {
+        // Arrange
+        $newUserData = User::factory()->make()->toArray();
+        $newUserData['password'] = 'password123';
+        $newUserData['password_confirmation'] = 'password123';
 
-    // Act
-    $response = $this->post('/register', $userData);
+        // Act
+        $response = $this->post('/register', $newUserData);
 
-    // Assert
-    $response->assertSessionHasErrors(['email']);
-}
-
-
+        // Assert
+        $response->assertRedirect('/dashboard');
+        $this->assertDatabaseHas('users', ['email' => $newUserData['email']]);
+    }
 ```
 
----
+##### `registration_fails_with_invalid_email_format`
+
+```php
+    #[Test]
+    public function registration_fails_with_invalid_email_format()
+    {
+        $userData = User::factory()->make([
+            'email' => 'invalid..email@'
+        ])->toArray();
+        $userData['password'] = 'password123';
+        $userData['password_confirmation'] = 'password123';
+
+        $response = $this->post('/register', $userData);
+
+        $response->assertSessionHasErrors(['email']);
+    }
+```
+
+##### `user_registration_fails_with_empty_name`
+
+```php
+    #[Test]
+    public function user_registration_fails_with_empty_name()
+    {
+        $userData = User::factory()->make(['name' => ''])->toArray();
+        $userData['password'] = 'password123';
+        $userData['password_confirmation'] = 'password123';
+
+        $response = $this->post('/register', $userData);
+
+        $response->assertSessionHasErrors(['name']);
+    }
+```
+
+##### `registration_fails_with_duplicate_email`
+
+```php
+    #[Test]
+    public function registration_fails_with_duplicate_email()
+    {
+        // Arrange
+        User::factory()->create(['email' => 'dupe@example.com']);
+        $userData = [
+            'name' => 'Another User',
+            'email' => 'dupe@example.com',
+            'password' => 'anotherpassword',
+            'password_confirmation' => 'anotherpassword',
+        ];
+
+        // Act
+        $response = $this->post('/register', $userData);
+
+        // Assert
+        $response->assertSessionHasErrors('email');
+    }
+```
+
+##### `registration_fails_with_double_dot_email`
+
+```php
+    #[Test]
+    public function registration_fails_with_double_dot_email()
+    {
+        // Arrange
+        $userData = [
+            'name' => 'Edge Case User',
+            'email' => 'user..name@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ];
+
+        // Act
+        $response = $this->post('/register', $userData);
+
+        // Assert
+        $response->assertSessionHasErrors(['email']);
+    }
+```
 
 ### Unit Tests (using AAA)
+#### `UserTest.php`
 
-#### `multiple_users_are_created_with_unique_emails`
+##### `password_is_hashed_correctly_upon_user_creation`
 
 ```php
-public function multiple_users_are_created_with_unique_emails()
-{
-    // Arrange
-    $users = User::factory()->count(3)->make();
+    #[Test]
+    public function password_is_hashed_correctly_upon_user_creation()
+    {
+        // Arrange
+        $password = 'SecurePassword123!';
+        $user = User::factory()->make([
+            'password' => bcrypt($password)
+        ]);
 
-    // Act
-    $emails = $users->pluck('email')->toArray();
-
-    // Assert
-    $this->assertCount(3, array_unique($emails));
-}
-
+        // Assert
+        $this->assertNotEquals($password, $user->password);
+        $this->assertTrue(Hash::check($password, $user->password));
+    }
 ```
 
-#### `password_is_hashed_correctly`
+##### `email_with_invalid_format_fails_validation`
 
 ```php
-public function password_is_hashed_correctly()
-{
-    // Arrange
-    $password = 'SuperSecure123!';
-    $user = User::factory()->make(['password' => bcrypt($password)]);
+    #[Test]
+    public function email_with_invalid_format_fails_validation(): void
+    {
+        // Arrange
+        $invalidEmail = 'invalid..@email';
 
-    // Assert
-    $this->assertNotEquals($password, $user->password);
-    $this->assertTrue(Hash::check($password, $user->password));
-}
+        // Act
+        $isValid = filter_var($invalidEmail, FILTER_VALIDATE_EMAIL);
 
+        // Assert
+        $this->assertFalse($isValid);
+    }
 ```
-#### `email_with_invalid_format_is_rejected`
+
+##### `multiple_users_are_created_with_valid_emails`
 
 ```php
-public function email_with_invalid_format_is_rejected()
-{
-    // Arrange
-    $invalidEmail = 'wrong..email@';
+    #[Test]
+    public function multiple_users_are_created_with_valid_emails()
+    {
+        // Arrange
+        $users = User::factory()->count(3)->make();
 
-    // Act
-    $isValid = filter_var($invalidEmail, FILTER_VALIDATE_EMAIL);
+        // Act & Assert
+        $emails = $users->pluck('email')->toArray();
+        $this->assertCount(3, array_unique($emails));
+    }
+```
 
-    // Assert
-    $this->assertFalse($isValid);
-}
+##### `email_with_double_dots_is_invalid`
 
+```php
+    #[Test]
+    public function email_with_double_dots_is_invalid()
+    {
+        // Arrange
+        $invalidEmail = 'test..email@example.com';
 
+        // Act
+        $isValid = filter_var($invalidEmail, FILTER_VALIDATE_EMAIL);
+
+        // Assert
+        $this->assertFalse($isValid);
+    }
+```
+
+##### `email_ending_with_at_symbol_is_invalid`
+
+```php
+    #[Test]
+    public function email_ending_with_at_symbol_is_invalid()
+    {
+        // Arrange
+        $invalidEmail = 'test@';
+
+        // Act
+        $isValid = filter_var($invalidEmail, FILTER_VALIDATE_EMAIL);
+
+        // Assert
+        $this->assertFalse($isValid);
+    }
 ```
 ---
 
 ## Test Results Screenshot
 
-![Test Result Local Screenshot](image-1.png)
+![Test Result Local Screenshot](image.png)
 ![Test Results in GitHub Screenshot](image-2.png)
 
 ---

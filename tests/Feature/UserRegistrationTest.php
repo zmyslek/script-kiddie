@@ -29,15 +29,29 @@ class UserRegistrationTest extends TestCase
     }
 
     #[Test]
-    public function user_registration_fails_with_missing_data()
+    public function registration_fails_with_invalid_email_format()
     {
-        $response = $this->post('/register', [
-            'name' => '',
-            'email' => '',
-            'password' => '',
-        ]);
+        $userData = User::factory()->make([
+            'email' => 'invalid..email@'
+        ])->toArray();
+        $userData['password'] = 'password123';
+        $userData['password_confirmation'] = 'password123';
 
-        $response->assertSessionHasErrors(['name', 'email', 'password']);
+        $response = $this->post('/register', $userData);
+
+        $response->assertSessionHasErrors(['email']);
+    }
+
+    #[Test]
+    public function user_registration_fails_with_empty_name()
+    {
+        $userData = User::factory()->make(['name' => ''])->toArray();
+        $userData['password'] = 'password123';
+        $userData['password_confirmation'] = 'password123';
+
+        $response = $this->post('/register', $userData);
+
+        $response->assertSessionHasErrors(['name']);
     }
 
     #[Test]
@@ -57,24 +71,6 @@ class UserRegistrationTest extends TestCase
 
         // Assert
         $response->assertSessionHasErrors('email');
-    }
-
-    #[Test]
-    public function registration_with_invalid_email_fails()
-    {
-        // Arrange
-        $userData = [
-            'name' => 'Test User',
-            'email' => 'invalid..email@',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
-        ];
-
-        // Act
-        $response = $this->post('/register', $userData);
-
-        // Assert
-        $response->assertSessionHasErrors(['email']);
     }
 
     #[Test]
