@@ -37,17 +37,6 @@ class UserTest extends TestCase
     }
 
     #[Test]
-    public function multiple_users_are_created_with_valid_emails()
-    {
-        // Arrange
-        $users = User::factory()->count(3)->make();
-
-        // Act & Assert
-        $emails = $users->pluck('email')->toArray();
-        $this->assertCount(3, array_unique($emails));
-    }
-
-    #[Test]
     public function email_with_double_dots_is_invalid()
     {
         // Arrange

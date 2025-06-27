@@ -38,12 +38,6 @@
    - **Unhappy Path**: User submits empty name, invalid email format, double-dot email, duplicate email, or password mismatch.
    - **Scenario**: Registration and validation.
 
-3. **As a developer**, I want to ensure that validation and hashing logic works correctly, so user data remains secure and formatted.
-
-   - **Happy Path**: Password is hashed, email passes validation.
-   - **Unhappy Path**: Email fails due to invalid format (double dots, ending with `@`, etc.).
-   - **Scenario**: Unit tests for validation logic.
-
 ### Acceptance Criteria
 
 * Contact Form:
@@ -74,13 +68,14 @@
 
 ### Link to the V-Model
 
-| V-Model Phase       | Test Level  | User Story              | Scenario Description              | Test Description                                   |
-| ------------------- | ----------- | ----------------------- | --------------------------------- | -------------------------------------------------- |
-| **Specification**   | System Test | Visitor submits contact | Valid/invalid name/email/message  | Form submission, error handling, session feedback  |
-| **Specification**   | System Test | New user registers      | Valid/invalid email/name/password | User creation, DB persistence, redirection         |
-| **Detailed Design** | Unit Test   | User creation factory   | Multiple users with unique emails | Tests email uniqueness, password hashing           |
-| **Detailed Design** | Unit Test   | Validation logic        | Invalid email, empty fields       | Tests Laravel validator logic for input edge cases |
-| **Detailed Design** | Unit Test   |Password hashing         | Password security                 | Ensure plain-text password is not stored           |
+The unit tests validate the low-level implementation logic such as input parsing and password hashing, aligning with the bottom-left of the V-model. These are mirrored on the right by system tests which validate complete user workflows like registration and form submission.
+
+| V-Model Phase       | Test Level  | User Story                                            | Scenario Description                                      | Test Description                                                |
+| ------------------- | ----------- | ----------------------------------------------------- | --------------------------------------------------------- | --------------------------------------------------------------- |
+| **Specification**   | System Test | Contact Form submission (1)                           | Valid/invalid name/email/message in the contact form      | Form submission, error handling, session feedback (Test 1, 2)   |
+| **Specification**   | System Test | User Registration (2)                                 | Valid/invalid email/name/password in the registration form| User creation, DB persistence, redirection (Test 3-7)           |
+| **Detailed Design** | Unit Test   | User Registration (2) and Contact Form Submission (1) | Invalid email and empty fields are inputed                | Tests Laravel validator logic for input edge cases (Test 9-11)  |
+| **Detailed Design** | Unit Test   | User Registration (2)                                 | Password security is maintained by hashing                | Ensure plain-text password is not stored (Test 8)               |
 
 ---
 ## Implementation
@@ -266,21 +261,6 @@
     }
 ```
 
-##### `multiple_users_are_created_with_valid_emails`
-
-```php
-    #[Test]
-    public function multiple_users_are_created_with_valid_emails()
-    {
-        // Arrange
-        $users = User::factory()->count(3)->make();
-
-        // Act & Assert
-        $emails = $users->pluck('email')->toArray();
-        $this->assertCount(3, array_unique($emails));
-    }
-```
-
 ##### `email_with_double_dots_is_invalid`
 
 ```php
@@ -359,13 +339,21 @@ Writing and running tests went according to plan, and all major user stories are
 
 ---
 
+### Conclusion
+
+**What the testing results mean for the quality of the project?**
+The tests check all positive happy and unhappy paths. The user cannot make a mistake that will put him in a place where he does not know what his next step should be, for example, when user inputs a wrong email it gets tested and if it is not correct the system informs the user and does not save faulty data in a database. 
+Tte test cases eliminate most of the user input errors as well as test proper provisioning of data, including database access,  elevate quality of the project in terms of usability, rubustness and security.
+
+---
+
 ### Critical Reflection and Improvement Proposal
 
 The testing process was smooth, and all intended test cases were implemented successfully. The combination of unit and system tests provides solid backend confidence.
 
 **Improvements:**
 
-1. Add integration tests using `Mail::fake()` to test mail-sending without requiring a real SMTP server.
+1. While contact form submission works, testing the mail dispatch remains essential to ensure full feature delivery. Adding Mail::fake() will allow mocking email behavior without requiring SMTP setup, closing a critical test coverage gap.
 2. Integrate UI testing with Laravel Dusk for full end-to-end testing of frontend behavior.
 3. Verify CI by performing a real GitHub push with failing and passing tests.
 4. Consider adding performance/stress testing tools if scaling becomes a concern.
